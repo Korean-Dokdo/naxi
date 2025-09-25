@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>아주 간단한 사주(재미용)</title>
+  <meta name="description" content="서버 없이 동작하는 초간단 사주 웹페이지 (엔터테인먼트용)" />
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; margin: 0; padding: 24px; line-height: 1.5; }
+    .card { max-width: 720px; margin: 0 auto; padding: 20px; border: 1px solid rgba(0,0,0,.1); border-radius: 16px; }
+    h1 { margin-top: 0; font-size: 1.4rem; }
+    label { display:block; margin: 8px 0 4px; font-weight: 600; }
+    input, select, button { width: 100%; padding: 12px; font-size: 1rem; border-radius: 12px; border: 1px solid rgba(0,0,0,.15); background: inherit; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .actions { display:flex; gap:12px; margin-top:12px; }
+    .result { margin-top: 16px; padding: 16px; border-radius: 12px; background: rgba(0,0,0,.04); }
+    small { opacity: .7; }
+    footer { max-width: 720px; margin: 12px auto; font-size: .9rem; opacity: .8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>아주 간단한 사주 (재미용)</h1>
+    <p><small>※ 입력은 브라우저 안에서만 처리되며 서버로 전송되지 않습니다. 결과는 엔터테인먼트용입니다.</small></p>
+
+    <form id="form">
+      <label for="birth">생년월일</label>
+      <input id="birth" type="date" required />
+
+      <div class="row">
+        <div>
+          <label for="time">태어난 시간 (선택)</label>
+          <select id="time">
+            <option value="">모름/무관</option>
+            <option value="0">자(23~01)</option>
+            <option value="1">축(01~03)</option>
+            <option value="2">인(03~05)</option>
+            <option value="3">묘(05~07)</option>
+            <option value="4">진(07~09)</option>
+            <option value="5">사(09~11)</option>
+            <option value="6">오(11~13)</option>
+            <option value="7">미(13~15)</option>
+            <option value="8">신(15~17)</option>
+            <option value="9">유(17~19)</option>
+            <option value="10">술(19~21)</option>
+            <option value="11">해(21~23)</option>
+          </select>
+        </div>
+        <div>
+          <label for="gender">성별 (선택)</label>
+          <select id="gender">
+            <option value="">선택 안 함</option>
+            <option value="F">여성</option>
+            <option value="M">남성</option>
+            <option value="N">기타/밝히지 않음</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit">간단 해석 보기</button>
+        <button type="button" id="reset">초기화</button>
+      </div>
+    </form>
+
+    <div id="out" class="result" hidden></div>
+  </div>
+
+  <footer>
+    <small>© 2025 간단 사주 데모 · 정확한 명리 해석이 아닌 가벼운 참고/오락용입니다.</small>
+  </footer>
+
+  <script>
+    // ===== 간단 규칙 세트 =====
+    // 12지(띠) 계산: 기준연 2004(갑신·원숭이)로 맞춰 배열 인덱스 도출
+    const ZODIACS = ["원숭이(신)", "닭(유)", "개(술)", "돼지(해)", "쥐(자)", "소(축)", "호랑이(인)", "토끼(묘)", "용(진)", "뱀(사)", "말(오)", "양(미)"];
+
+    // 띠별 한 줄 코멘트 (예시용, 취향껏 수정 가능)
+    const Z_COMMENTS = {
+      "쥐(자)": "기민하고 시작을 잘하는 타입. 작은 습관이 큰 성과로 이어져요.",
+      "소(축)": "꾸준함이 무기. 느리지만 끝까지 가는 힘이 있어요.",
+      "호랑이(인)": "리더십과 추진력. 큰일을 벌이되 마무리 루틴을 챙기면 좋아요.",
+      "토끼(묘)": "섬세함과 미감이 돋보여요. 협업에서 조율자 역할이 강점.",
+      "용(진)": "존재감과 포부. 목표를 구체화하면 실전 파워가 커져요.",
+      "뱀(사)": "분석적이고 신중. 데이터와 기록이 복을 부릅니다.",
+      "말(오)": "에너지와 속도. 과부하만 피하면 성과가 빨라요.",
+      "양(미)": "배려와 조화. 안정적 루틴이 컨디션을 끌어올려요.",
+      "원숭이(신)": "창의력과 재치. 실험정신에 실행 체크리스트를 더해보세요.",
+      "닭(유)": "디테일 장인. 마감 관리가 곧 영향력.",
+      "개(술)": "의리와 책임감. 팀에서 신뢰를 모읍니다.",
+      "돼지(해)": "포용력과 여유. 건강 루틴이 운을 돕습니다."
+    };
+
+    // 월/시간 간단 코멘트(맛보기)
+    const MONTH_TIPS = [
+      "1월: 새 출발 운. 작은 습관부터!", "2월: 관계운↑ 협업 제안 OK",
+      "3월: 학습운↑ 자격증/강의 적합", "4월: 정리·정돈이 돈이 된다",
+      "5월: 활동력↑ 바깥일 유리", "6월: 문서·계약은 재확인",
+      "7월: 재정 점검 타이밍", "8월: 여행·전환운",
+      "9월: 집중력↑ 성과 가시화", "10월: 인간관계 다이빙",
+      "11월: 차분히 실속 챙기기", "12월: 마무리·회고에 행운"
+    ];
+
+    const HOUR_TIPS = [
+      "야간 집중력이 좋아요.",
+      "새벽 아이디어가 반짝!",
+      "이른 아침 행운.",
+      "오전 컨디션 우수.",
+      "오전-점심 성과가 납니다.",
+      "정오 이후 커뮤니케이션 운↑",
+      "정오~오후 추진력↑",
+      "오후 차분히 정리 Good",
+      "해질녘 영감 포인트",
+      "저녁 네트워킹 운↑",
+      "밤엔 과로 주의",
+      "늦은 밤 재충전이 Key"
+    ];
+
+    function getZodiac(year){
+      // 2004 → ZODIACS[0] = 원숭이(신), 2008 → '쥐(자)' 등
+      const idx = ((year - 2004) % 12 + 12) % 12;
+      return ZODIACS[idx];
+    }
+
+    function renderResult(dateStr, timeIdx, gender){
+      const d = new Date(dateStr);
+      if (isNaN(d)) return "날짜를 정확히 입력해 주세요.";
+
+      const y = d.getUTCFullYear(); // 간단히 연도만 사용 (정밀 명리는 음력/절입시 등 필요)
+      const m = d.getUTCMonth() + 1;
+
+      const zodiac = getZodiac(y);
+      const zodiacComment = Z_COMMENTS[zodiac] || "";
+      const monthTip = MONTH_TIPS[m-1];
+      const hourTip = (timeIdx==="" ? "시간 미입력: 컨디션 루틴을 일정하게!" : HOUR_TIPS[Number(timeIdx)]);
+
+      const gLabel = gender ? ` · 성별: ${gender}` : "";
+      return `
+        <b>${y}년생 · 띠: ${zodiac}${gLabel}</b><br/>
+        <div style="margin-top:8px">
+          <b>한 줄 성향:</b> ${zodiacComment}<br/>
+          <b>월 힌트:</b> ${monthTip}<br/>
+          <b>시간 힌트:</b> ${hourTip}
+        </div>
+        <hr/>
+        <small>※ 실제 명리(사주팔자)는 음력/절기/천간·지지·대운 등 복잡한 계산이 필요합니다. 이 페이지는 가벼운 재미용 요약입니다.</small>
+      `;
+    }
+
+    const form = document.getElementById('form');
+    const out = document.getElementById('out');
+    document.getElementById('reset').addEventListener('click', () => {
+      form.reset();
+      out.hidden = true;
+      out.innerHTML = "";
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const birth = document.getElementById('birth').value;
+      const time = document.getElementById('time').value;
+      const gender = document.getElementById('gender').value;
+      out.innerHTML = renderResult(birth, time, gender);
+      out.hidden = false;
+    });
+  </script>
+</body>
+</html>
