@@ -1,169 +1,295 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>아주 간단한 사주(재미용) by 영민 </title>
-  <meta name="description" content="서버 없이 동작하는 초간단 사주 웹페이지 (엔터테인먼트용)" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>신통방통 궁합풀이</title>
   <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; margin: 0; padding: 24px; line-height: 1.5; }
-    .card { max-width: 720px; margin: 0 auto; padding: 20px; border: 1px solid rgba(0,0,0,.1); border-radius: 16px; }
-    h1 { margin-top: 0; font-size: 1.4rem; }
-    label { display:block; margin: 8px 0 4px; font-weight: 600; }
-    input, select, button { width: 100%; padding: 12px; font-size: 1rem; border-radius: 12px; border: 1px solid rgba(0,0,0,.15); background: inherit; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .actions { display:flex; gap:12px; margin-top:12px; }
-    .result { margin-top: 16px; padding: 16px; border-radius: 12px; background: rgba(0,0,0,.04); }
-    small { opacity: .7; }
-    footer { max-width: 720px; margin: 12px auto; font-size: .9rem; opacity: .8; }
+    @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
+
+    body {
+      font-family: 'Gowun Dodum', sans-serif;
+      background-color: #f0e6e6;
+      background-image: url('https://www.transparenttextures.com/patterns/az-subtle.png');
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 30px 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 760px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+
+    h1 {
+      color: #8a2be2;
+      font-size: 2.2em;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    p.subtitle {
+      font-size: 1.05em;
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .input-group {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .person-input {
+      width: 45%;
+      min-width: 280px;
+      margin-bottom: 10px;
+      text-align: left;
+    }
+
+    .person-input h3 {
+      color: #555;
+      margin: 0 0 8px 0;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      font-size: 0.95em;
+      color: #555;
+    }
+
+    .person-input input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1em;
+      font-family: 'Gowun Dodum', sans-serif;
+    }
+
+    button {
+      background: linear-gradient(45deg, #8a2be2, #ff69b4);
+      color: white;
+      padding: 14px 34px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    #loader {
+      display: none;
+      margin: 26px auto;
+      border: 8px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 8px solid #8a2be2;
+      width: 56px;
+      height: 56px;
+      animation: spin 1.5s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #result {
+      margin-top: 26px;
+      text-align: left;
+      padding: 26px;
+      background-color: #fafafa;
+      border-radius: 10px;
+      border: 1px solid #eee;
+      line-height: 1.8;
+      display: none;
+    }
+
+    #result h2 {
+      text-align: center;
+      color: #8a2be2;
+      margin-bottom: 18px;
+    }
+
+    #result h4 {
+      color: #ff69b4;
+      margin-top: 22px;
+      border-left: 4px solid #ff69b4;
+      padding-left: 10px;
+    }
+
+    .bad-result h2 { color: #dc3545; }
+    .bad-result h4 {
+      color: #8b0000;
+      border-left-color: #8b0000;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>아주 간단한 사주 (재미용)</h1>
-    <p><small>※ 입력은 브라우저 안에서만 처리되며 서버로 전송되지 않습니다. 결과는 엔터테인먼트용입니다.</small></p>
 
-    <form id="form">
-      <label for="birth">생년월일</label>
-      <input id="birth" type="date" required />
+  <div class="container">
+    <h1>✨ 신통방통 궁합풀이 ✨</h1>
+    <p class="subtitle">하늘의 뜻을 물어 두 분의 인연을 낱낱이 파헤쳐 드립니다.</p>
 
-      <div class="row">
-        <div>
-          <label for="time">태어난 시간 (선택)</label>
-          <select id="time">
-            <option value="">모름/무관</option>
-            <option value="0">자(23~01)</option>
-            <option value="1">축(01~03)</option>
-            <option value="2">인(03~05)</option>
-            <option value="3">묘(05~07)</option>
-            <option value="4">진(07~09)</option>
-            <option value="5">사(09~11)</option>
-            <option value="6">오(11~13)</option>
-            <option value="7">미(13~15)</option>
-            <option value="8">신(15~17)</option>
-            <option value="9">유(17~19)</option>
-            <option value="10">술(19~21)</option>
-            <option value="11">해(21~23)</option>
-          </select>
+    <div class="input-group">
+      <div class="person-input">
+        <h3>🤵🏻‍♂️ 남성</h3>
+        <div class="field">
+          <label for="maleName">이름</label>
+          <input type="text" id="maleName" autocomplete="name" />
         </div>
-        <div>
-          <label for="gender">성별 (선택)</label>
-          <select id="gender">
-            <option value="">선택 안 함</option>
-            <option value="F">여성</option>
-            <option value="M">남성</option>
-            <option value="N">기타/밝히지 않음</option>
-          </select>
+        <div class="field">
+          <label for="maleBirth">생년월일</label>
+          <input type="date" id="maleBirth" />
         </div>
       </div>
 
-      <div class="actions">
-        <button type="submit">간단 해석 보기</button>
-        <button type="button" id="reset">초기화</button>
+      <div class="person-input">
+        <h3>👰🏻‍♀️ 여성</h3>
+        <div class="field">
+          <label for="femaleName">이름</label>
+          <input type="text" id="femaleName" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="femaleBirth">생년월일</label>
+          <input type="date" id="femaleBirth" />
+        </div>
       </div>
-    </form>
+    </div>
 
-    <div id="out" class="result" hidden></div>
+    <button id="seeResult">궁합 결과 보기</button>
+
+    <div id="loader"></div>
+    <div id="result"></div>
   </div>
 
-  <footer>
-    <small>© 2025 간단 사주 데모 · 정확한 명리 해석이 아닌 가벼운 참고/오락용입니다.</small>
-  </footer>
-
   <script>
-    // ===== 간단 규칙 세트 =====
-    // 12지(띠) 계산: 기준연 2004(갑신·원숭이)로 맞춰 배열 인덱스 도출
-    const ZODIACS = ["원숭이(신)", "닭(유)", "개(술)", "돼지(해)", "쥐(자)", "소(축)", "호랑이(인)", "토끼(묘)", "용(진)", "뱀(사)", "말(오)", "양(미)"];
+    const btn = document.getElementById('seeResult');
 
-    // 띠별 한 줄 코멘트 (예시용, 취향껏 수정 가능)
-    const Z_COMMENTS = {
-      "쥐(자)": "기민하고 시작을 잘하는 타입. 작은 습관이 큰 성과로 이어져요.",
-      "소(축)": "꾸준함이 무기. 느리지만 끝까지 가는 힘이 있어요.",
-      "호랑이(인)": "리더십과 추진력. 큰일을 벌이되 마무리 루틴을 챙기면 좋아요.",
-      "토끼(묘)": "섬세함과 미감이 돋보여요. 협업에서 조율자 역할이 강점.",
-      "용(진)": "존재감과 포부. 목표를 구체화하면 실전 파워가 커져요.",
-      "뱀(사)": "분석적이고 신중. 데이터와 기록이 복을 부릅니다.",
-      "말(오)": "에너지와 속도. 과부하만 피하면 성과가 빨라요.",
-      "양(미)": "배려와 조화. 안정적 루틴이 컨디션을 끌어올려요.",
-      "원숭이(신)": "창의력과 재치. 실험정신에 실행 체크리스트를 더해보세요.",
-      "닭(유)": "디테일 장인. 마감 관리가 곧 영향력.",
-      "개(술)": "의리와 책임감. 팀에서 신뢰를 모읍니다.",
-      "돼지(해)": "포용력과 여유. 건강 루틴이 운을 돕습니다."
-    };
+    function getFortune() {
+      const maleName = document.getElementById('maleName').value.trim();
+      const femaleName = document.getElementById('femaleName').value.trim();
+      const maleBirth = document.getElementById('maleBirth').value.trim();
+      const femaleBirth = document.getElementById('femaleBirth').value.trim();
 
-    // 월/시간 간단 코멘트(맛보기)
-    const MONTH_TIPS = [
-      "1월: 새 출발 운. 작은 습관부터!", "2월: 관계운↑ 협업 제안 OK",
-      "3월: 학습운↑ 자격증/강의 적합", "4월: 정리·정돈이 돈이 된다",
-      "5월: 활동력↑ 바깥일 유리", "6월: 문서·계약은 재확인",
-      "7월: 재정 점검 타이밍", "8월: 여행·전환운",
-      "9월: 집중력↑ 성과 가시화", "10월: 인간관계 다이빙",
-      "11월: 차분히 실속 챙기기", "12월: 마무리·회고에 행운"
-    ];
+      const loader = document.getElementById('loader');
+      const resultDiv = document.getElementById('result');
 
-    const HOUR_TIPS = [
-      "야간 집중력이 좋아요.",
-      "새벽 아이디어가 반짝!",
-      "이른 아침 행운.",
-      "오전 컨디션 우수.",
-      "오전-점심 성과가 납니다.",
-      "정오 이후 커뮤니케이션 운↑",
-      "정오~오후 추진력↑",
-      "오후 차분히 정리 Good",
-      "해질녘 영감 포인트",
-      "저녁 네트워킹 운↑",
-      "밤엔 과로 주의",
-      "늦은 밤 재충전이 Key"
-    ];
+      if (!maleName || !femaleName || !maleBirth || !femaleBirth) {
+        alert('이름과 생년월일을 모두 입력해주세요!');
+        return;
+      }
 
-    function getZodiac(year){
-      // 2004 → ZODIACS[0] = 원숭이(신), 2008 → '쥐(자)' 등
-      const idx = ((year - 2004) % 12 + 12) % 12;
-      return ZODIACS[idx];
+      resultDiv.style.display = 'none';
+      resultDiv.innerHTML = '';
+      loader.style.display = 'block';
+
+      setTimeout(() => {
+        loader.style.display = 'none';
+        let resultContent = '';
+
+        if (maleName === '허영민' && femaleName === '김나희') {
+          // 특수 케이스: 요청한 본문 그대로
+          resultDiv.className = 'good-result';
+          resultContent = `
+            <h2>영민❤나희 천생연분 궁합 풀이</h2>
+            <p>두 분의 인연은 마치 잘 짜인 한 폭의 그림과 같습니다. 1997년 정축(丁丑)년의 기운을 타고난 영민님은 따스한 촛불과 듬직한 대지의 성정을 지녔습니다. 1995년 을해(乙亥)년의 기운을 타고난 나희님은 유연한 나무와 넓은 바다의 성정을 품고 있지요.</p>
+            <p>작은 불씨가 세상을 밝히듯 섬세하고 다정한 영민님의 온기가 자유롭고 창의적인 나희님의 성장에 따스한 햇살이 되어주고, 나희님의 드넓은 포용력과 긍정적인 에너지는 영민님의 세상에 활력과 풍요를 더해주는, 서로가 서로에게 더할 나위 없는 귀인(貴人)의 합입니다.</p>
+
+            <h4>💖 친구 궁합: 평생 웃음을 나눌 단짝처럼</h4>
+            <p>두 분이 함께 있으면 대화가 마르지 않는 샘물과 같습니다. 나희님이 가진 밝고 유머러스한 기운은 영민님의 안정적인 에너지와 만나 최고의 시너지를 발휘합니다. 마치 영민님이라는 아늑한 모닥불 앞에서 나희님이라는 이야기꾼이 신나는 이야기를 풀어놓는 형국이니, 주변 사람들마저 두 분의 유쾌한 분위기에 절로 미소 짓게 될 것입니다. 사소한 일상도 두 분이 함께하면 특별한 이벤트가 되니, 평생을 함께할 가장 재미있는 친구를 얻으신 것과 같습니다.</p>
+
+            <h4>💖 연인 궁합: 드라마보다 더 설레는 로맨스</h4>
+            <p>하늘이 맺어준 인연이라는 말이 꼭 들어맞는 궁합입니다. 나희님의 생기 넘치는 매력과 톡톡 튀는 표현력은 영민님의 마음을 단숨에 사로잡는 강력한 힘을 가졌습니다. 반대로 영민님의 한결같고 깊은 다정함은 나희님이 세상에서 가장 사랑받는 사람이라는 확신을 심어주지요. 특히 두 분은 '스파크'가 튀는 열정적인 기운이 강하여, 만남이 길어질수록 서로에게 더욱 깊이 빠져드는 사랑을 하게 될 것입니다. 서로의 눈빛만 봐도 마음을 읽는, 운명 같은 사랑의 주인공이 바로 두 분입니다.</p>
+
+            <h4>💖 결혼 궁합: 행복과 웃음이 가득한 보금자리</h4>
+            <p>결혼 궁합에 있어서는 더할 나위 없이 이상적인 조화를 이룹니다. 영민님의 꼼꼼하고 책임감 있는 성정은 안정적인 가정의 주춧돌이 되어줄 것이며, 나희님의 긍정적이고 사교적인 기운은 집안에 늘 따스한 온기와 활기를 불어넣을 것입니다. 가끔 의견 차이가 생길 때도 있겠지만, 이는 더 단단한 관계를 위한 과정일 뿐입니다. 마치 오케스트라가 최상의 화음을 찾기 위해 조율하는 것처럼, 두 분은 대화를 통해 항상 더 나은 합의점을 찾아낼 것입니다. 두 분이 함께 만들어갈 가정은 맛있는 음식과 좋은 술, 그리고 끝없는 웃음이 가득한 행복한 공간이 될 것입니다. 결혼 시기는 2026년 11~12월이면 최고!</p>
+
+            <h4>💖 비즈니스/동업 궁합: 세상을 놀라게 할 환상의 파트너</h4>
+            <p>두 분이 힘을 합치면 불가능한 일이 없을 정도의 강력한 시너지를 자랑합니다. 나희님은 타고난 감각과 트렌드를 읽는 눈, 사람을 끌어당기는 매력이 있어 홍보, 마케팅, 콘텐츠 기획 분야에서 독보적인 재능을 발휘할 기운을 가졌습니다. 영민님은 공학적인 사고를 바탕으로 한 치밀한 분석력과 기획력, 안정적인 실행 능력을 지녔지요. 만약 두 분이 '최신 유행을 선도하는 라이프스타일 플랫폼'과 같은 사업을 함께한다면, 나희님이 창의적인 아이디어를 내고 영민님이 이를 기술적으로 구현하고 사업을 안정시키는 환상의 조합으로 큰 성공을 거둘 수 있습니다.</p>
+
+            <h4>💖 성격 궁합: 서로를 완성하는 완벽한 퍼즐 조각</h4>
+            <p>서로 다른 매력이 완벽한 조화를 이루는 궁합입니다. 영민님의 섬세하고 깊은 감성은 때로는 겉으로 강해 보이는 나희님의 내면을 부드럽게 감싸 안아주고, 나희님의 대담하고 시원시원한 성격은 가끔씩 깊은 생각에 잠기는 영민님에게 새로운 세상을 열어주는 역할을 합니다. 서로가 가진 장점은 극대화해주고, 부족한 부분은 자연스럽게 채워주니, 함께 있을 때 비로소 가장 완벽한 '우리'가 되는 천생연분입니다.</p>
+
+            <h4>💖 재물 궁합: 함께할수록 차오르는 부(富)의 기운</h4>
+            <p>두 분의 재물운은 흐르는 물이 모여 큰 강을 이루는 형상입니다. 나희님은 좋은 사람과 새로운 기회를 끌어당겨 재물이 들어올 길을 활짝 여는 기운을 가졌습니다. 영민님은 그렇게 들어온 재물을 꼼꼼하고 현명하게 관리하여 새어 나가지 않고 차곡차곡 쌓아 올리는 능력이 탁월합니다. 함께 미래를 계획하고 자산을 관리한다면, 시간이 지날수록 누구도 부럽지 않은 풍요를 누리게 될 것입니다. 서로가 서로에게 최고의 재테크인 셈입니다.</p>
+
+            <h4>💖 속궁합: 말로는 다 표현할 수 없는 황홀한 교감</h4>
+            <p>두 분의 성적인 합은 뜨거운 불과 깊은 바다가 만나 펼쳐내는 장엄한 광경과 같습니다. 서로를 향한 강렬한 이끌림과 본능적인 교감을 바탕으로, 함께하는 모든 순간이 경이로운 축제가 될 것입니다. 굳이 말로 표현하지 않아도 서로가 무엇을 원하는지 직감적으로 알 수 있는 깊은 유대감을 가지고 있어, 육체적인 관계를 넘어 영혼의 합일까지 느낄 수 있는 최고의 궁합입니다. 특히 나희 님이 입으로 해 주고, 입, 얼굴에 마무리를 하게 해준다면 술술워커 팔로워는 100만도 금방! </p>
+
+            <h4>💖 가치관/목표 궁합: 같은 곳을 바라보며 함께 성장하는 동반자</h4>
+            <p>두 분은 '행복한 삶'이라는 같은 목적지를 향해 항해하는 든든한 동반자입니다. 인생이라는 여정 속에서 서로에게 가장 좋은 영향을 주는 스승이자 제자가 되어줄 것입니다. 함께 새로운 것을 배우고, 다양한 경험을 하며 세상을 보는 시야를 넓혀갈 것입니다. 혼자서는 이룰 수 없던 목표도 함께라면 즐거운 도전이 될 것이며, 그 과정 속에서 두 분의 사랑과 신뢰는 세상 그 무엇과도 바꿀 수 없는 단단한 보물이 될 것입니다.</p>
+          `;
+        } else {
+          // 일반 케이스: 완전 맵고, 여지 없이
+          resultDiv.className = 'bad-result';
+          const m = maleName, f = femaleName;
+          resultContent = `
+            <h2>${m}💔${f}, 이 조합은 시작도 전에 종료.</h2>
+            <p>직설로 갑니다. 이 궁합은 <strong>불합격</strong>입니다. 환상이 끼어들 틈조차 없어요. 만나면 삐걱, 대화하면 충돌, 계획하면 파토. 서로의 리듬은 정반대, 관점은 평행선, 양보는 사라지고 오해만 증식합니다.</p>
+
+            <h4>🧊 친구 궁합: 케미 0, 피로도 100</h4>
+            <p>유머코드 불일치. 한쪽이 웃으면 다른 쪽은 설명을 요구합니다. 만날 때마다 기 빨리고, 헤어지면 괜히 화가 남. <strong>친구로도 비추천</strong>.</p>
+
+            <h4>🧊 연인 궁합: 감정 소비형 블랙홀</h4>
+            <p>연애를 시작해도 ‘확신’은커녕 ‘의문’만 쌓입니다. 대화는 진심을 비껴가고, 사소한 말 한마디가 지뢰로 변합니다. 기념일은 분쟁일, 서프라이즈는 불쾌감. <strong>권하지 않습니다</strong>.</p>
+
+            <h4>🧊 결혼 궁합: 평화 대신 소음</h4>
+            <p>공간은 공유되지만 세계관은 공유되지 않습니다. 생활 루틴, 소비 기준, 인간관계 처리—모든 게 부딪힙니다. <strong>신혼보다 신경전</strong>. 이 조합의 결혼은 장기 프로젝트형 피로 누적 코스.</p>
+
+            <h4>🧊 비즈니스/동업 궁합: 회의가 일보다 많음</h4>
+            <p>한 사람은 브레이크, 한 사람은 급발진. 전략은 흩어지고 실행은 꼬입니다. 책임 소재 논쟁이 실적을 대체합니다. <strong>동업 금지</strong>.</p>
+
+            <h4>🧊 성격 궁합: 장점이 서로의 약점이 됨</h4>
+            <p>꼼꼼함은 잔소리로, 자유로움은 무책임으로 해석됩니다. 배려는 ‘간섭’, 솔직함은 ‘무례’로 번역됩니다. 서로의 좋은 면이 나쁜 라벨을 달고 돌아옵니다.</p>
+
+            <h4>🧊 재물 궁합: 새는 통장, 엇박자 지출</h4>
+            <p>버는 방식도, 쓰는 철학도 정반대. 합의 없는 소비와 과한 절약이 번갈아 등장하며 현금흐름은 상시 경보. 장기 자산? <strong>그림의 떡</strong>.</p>
+
+            <h4>🧊 속궁합: 타이밍-선호-소통 전부 미스</h4>
+            <p>열정은 있을 수 있으나 합은 안 맞습니다. 원하는 바, 속도, 표현법이 끝까지 어긋납니다. 대화로 맞추려 해도 기본값이 달라 번번이 재설정.</p>
+
+            <h4>🧊 가치관/목표 궁합: 목표는 같아도 길은 완전 반대</h4>
+            <p>행복을 원하지만 방법론이 충돌합니다. 한쪽은 계획-검증-진행, 다른 쪽은 실행-경험-즉흥. 결과는 <strong>지속적 마찰</strong>.</p>
+
+            <h4>🧊 총평</h4>
+            <p><strong>정리합니다: 비추.</strong> 애써 붙잡을수록 손해가 커지는 매칭입니다. 각자에게 더 나은 인연이 분명히 있습니다. 깔끔하게 접고, 시간을 아끼세요.</p>
+          `;
+        }
+
+        resultDiv.innerHTML = resultContent;
+        resultDiv.style.display = 'block';
+        resultDiv.scrollIntoView({ behavior: 'smooth' });
+      }, 1000);
     }
 
-    function renderResult(dateStr, timeIdx, gender){
-      const d = new Date(dateStr);
-      if (isNaN(d)) return "날짜를 정확히 입력해 주세요.";
-
-      const y = d.getUTCFullYear(); // 간단히 연도만 사용 (정밀 명리는 음력/절입시 등 필요)
-      const m = d.getUTCMonth() + 1;
-
-      const zodiac = getZodiac(y);
-      const zodiacComment = Z_COMMENTS[zodiac] || "";
-      const monthTip = MONTH_TIPS[m-1];
-      const hourTip = (timeIdx==="" ? "시간 미입력: 컨디션 루틴을 일정하게!" : HOUR_TIPS[Number(timeIdx)]);
-
-      const gLabel = gender ? ` · 성별: ${gender}` : "";
-      return `
-        <b>${y}년생 · 띠: ${zodiac}${gLabel}</b><br/>
-        <div style="margin-top:8px">
-          <b>한 줄 성향:</b> ${zodiacComment}<br/>
-          <b>월 힌트:</b> ${monthTip}<br/>
-          <b>시간 힌트:</b> ${hourTip}
-        </div>
-        <hr/>
-        <small>※ 실제 명리(사주팔자)는 음력/절기/천간·지지·대운 등 복잡한 계산이 필요합니다. 이 페이지는 가벼운 재미용 요약입니다.</small>
-      `;
-    }
-
-    const form = document.getElementById('form');
-    const out = document.getElementById('out');
-    document.getElementById('reset').addEventListener('click', () => {
-      form.reset();
-      out.hidden = true;
-      out.innerHTML = "";
-    });
-
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const birth = document.getElementById('birth').value;
-      const time = document.getElementById('time').value;
-      const gender = document.getElementById('gender').value;
-      out.innerHTML = renderResult(birth, time, gender);
-      out.hidden = false;
-    });
+    btn.addEventListener('click', getFortune);
   </script>
+
 </body>
 </html>
